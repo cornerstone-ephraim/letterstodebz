@@ -1,21 +1,31 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import Lenis from "lenis";
-import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import {
-  AnimatePresence,
-  motion,
-  useMotionValueEvent,
-  useReducedMotion,
-  useScroll,
-} from "motion/react";
-import { decemberLetter as letter } from "@/data/letters";
+  Component,
+  useEffect,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
+import { useMotionValue, useReducedMotion } from "motion/react";
+import { atmosphereFor, atmospheres } from "./scene-palette";
+import { letters } from "@/data/letters";
+import { LetterReader } from "./letter-reader";
 import { HeartGate } from "./heart-gate";
 import { NightSky } from "./night-sky";
 import { SceneFallback } from "./scene-fallback";
 import "./letters.css";
 import { Pause, Play } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 const LondonScene = dynamic(() => import("./london-scene"), { ssr: false });
 class SceneBoundary extends Component<
@@ -34,47 +44,38 @@ class SceneBoundary extends Component<
 export function LettersExperience() {
   const [open, setOpen] = useState(false);
   const [pauseOverride, setPauseOverride] = useState<boolean | null>(null);
-  const [activePassage, setActivePassage] = useState(0);
+  const [selected, setSelected] = useState(0);
+  const letter = letters[selected];
+  const atmosphere = atmosphereFor(letter.id);
+  const sky = atmospheres[atmosphere];
+  const theme = {
+    "--evening": sky.sky,
+    "--horizon": sky.horizon,
+    "--ink": sky.ink,
+    "--muted-ink": sky.muted,
+    "--love": sky.accent,
+  } as CSSProperties;
+  const scrollYProgress = useMotionValue(0);
+  function selectLetter(index: number) {
+    scrollYProgress.set(0);
+    setSelected(index);
+  }
   const reduced = useReducedMotion();
   // Respect the device preference initially, but let an explicit Play override it.
   const paused = pauseOverride ?? !!reduced;
   const showLiveScene = !reduced || pauseOverride !== null;
-  const scrollContainer = useRef<HTMLElement>(null);
-  const heading = useRef<HTMLHeadingElement>(null);
-  const scrollContent = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    container: scrollContainer,
-  });
 
   useEffect(() => {
-    if (!open || reduced || !scrollContainer.current || !scrollContent.current)
-      return;
-    const scrolling = new Lenis({
-      wrapper: scrollContainer.current,
-      content: scrollContent.current,
-      autoRaf: true,
-      smoothWheel: true,
-      syncTouch: false,
-      lerp: 0.1,
-      wheelMultiplier: 0.8,
-    });
-    return () => scrolling.destroy();
-  }, [open, reduced]);
+    if (open) return;
 
-  useMotionValueEvent(scrollYProgress, "change", (progress) => {
-    setActivePassage(Math.round(progress * (letter.paragraphs.length - 1)));
-  });
-
-  useEffect(() => {
-    if (open) {
-      heading.current?.focus({ preventScroll: true });
-      return;
-    }
     const previous = document.body.style.overflow;
     const restoration = window.history.scrollRestoration;
+
     window.history.scrollRestoration = "manual";
     document.body.style.overflow = "hidden";
+
     window.scrollTo({ top: 0, behavior: "instant" });
+
     return () => {
       document.body.style.overflow = previous;
       window.history.scrollRestoration = restoration;
@@ -84,6 +85,9 @@ export function LettersExperience() {
   return (
     <main
       className={`letters-experience ${open ? "is-open" : "is-sealed"}`}
+      style={theme}
+      data-atmosphere={atmosphere}
+      data-season={letter.season}
       data-world-motion={paused ? "paused" : "playing"}
     >
       <div className="letter-stage" inert={!open} aria-hidden={!open}>
@@ -95,103 +99,82 @@ export function LettersExperience() {
             A little world, just for you.
           </span>
         </header>
-        <NightSky scrollYProgress={scrollYProgress} />
-        <article
-          ref={scrollContainer}
-          className="letter-scroll"
-          aria-label="December letter from Keniye to Debz"
-          tabIndex={0}
-        >
-          <div ref={scrollContent}>
-            {letter.paragraphs.map((_, index) => (
-              <div className="letter-chapter" key={index} aria-hidden="true" />
-            ))}
-          </div>
-          <div
-            className="letter-copy-stage"
-            aria-live="polite"
-            aria-atomic="true"
+        <nav className="letter-months" aria-label="Choose a letter">
+          <label htmlFor="letter-month">A letter for</label>
+          <Select
+            value={String(selected)}
+            onValueChange={(value) => selectLetter(Number(value))}
           >
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.section
-                key={activePassage}
-                className="love-letter"
-                aria-label={`Passage ${activePassage + 1} of ${letter.paragraphs.length}`}
-                initial={{
-                  opacity: 0,
-                  transform: reduced ? "none" : "translateY(18px)",
-                }}
-                animate={{
-                  opacity: 1,
-                  transform: reduced ? "none" : "translateY(0px)",
-                }}
-                exit={{ opacity: 0 }}
-                transition={{
-                  duration: reduced ? 0.15 : 0.35,
-                  ease: [0.23, 1, 0.32, 1],
-                }}
-              >
-                {activePassage === 0 && (
-                  <>
-                    <p className="letter-date">{letter.date}</p>
-                    <h1 id="letter-greeting" ref={heading} tabIndex={-1}>
-                      {letter.greeting}
-                    </h1>
-                  </>
-                )}
-                <p className="letter-paragraph">
-                  {letter.paragraphs[activePassage]}
-                </p>
-                {activePassage === letter.paragraphs.length - 1 && (
-                  <p className="letter-signoff">
-                    {letter.signoff}
-                    <br />
-                    {letter.closing}
-                    <span>{letter.signature}</span>
-                  </p>
-                )}
-                {activePassage === 0 && (
-                  <p className="scroll-invitation">
-                    Scroll to unfold the letter ↓
-                  </p>
-                )}
-              </motion.section>
-            </AnimatePresence>
-          </div>
-        </article>
+            <SelectTrigger id="letter-month" className="letter-month-trigger">
+              <SelectValue>{letter.date}</SelectValue>
+            </SelectTrigger>
+            <SelectContent
+              className="letter-month-popup"
+              style={theme}
+              data-season={letter.season}
+              alignItemWithTrigger={false}
+              sideOffset={8}
+            >
+              <SelectGroup>
+                <SelectLabel>Select a month</SelectLabel>
+                {letters.map((item, index) => (
+                  <SelectItem key={item.id} value={String(index)}>
+                    {item.date}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </nav>
+        <NightSky scrollYProgress={scrollYProgress} atmosphere={atmosphere} />
+        {open && (
+          <LetterReader
+            key={letter.id}
+            letter={letter}
+            progress={scrollYProgress}
+            nextDate={letters[selected + 1]?.date}
+            onNext={() => selectLetter((selected + 1) % letters.length)}
+          />
+        )}
         <div
           className="london-landscape"
           role="img"
-          aria-label="Early winter night in London: snow falls over Tower Bridge and the Thames, with red buses and glowing windows."
+          aria-label={`${sky.description} in London, with Tower Bridge, moving traffic and rippling water.`}
         >
-          <SceneFallback />
+          <SceneFallback atmosphere={atmosphere} />
           {showLiveScene && (
             <SceneBoundary>
               <LondonScene
+                atmosphere={atmosphere}
+                season={letter.season}
                 progress={scrollYProgress}
                 paused={paused || !open}
               />
             </SceneBoundary>
           )}
         </div>
-        <div
-          className="snowfall"
-          aria-hidden="true"
-          style={{ animationPlayState: paused || !open ? "paused" : "running" }}
-        >
-          {Array.from({ length: 48 }, (_, i) => (
-            <span
-              key={i}
-              style={{
-                left: `${(i * 37) % 101}%`,
-                width: `${2 + (i % 3)}px`,
-                height: `${2 + (i % 3)}px`,
-                animationDuration: `${12 + (i % 13)}s`,
-                animationDelay: `${-((i * 7) % 25)}s`,
-              }}
-            />
-          ))}
-        </div>
+        {letter.season === "winter" && (
+          <div
+            className="snowfall"
+            aria-hidden="true"
+            style={{
+              animationPlayState: paused || !open ? "paused" : "running",
+            }}
+          >
+            {Array.from({ length: 48 }, (_, i) => (
+              <span
+                key={i}
+                style={{
+                  left: `${(i * 37) % 101}%`,
+                  width: `${2 + (i % 3)}px`,
+                  height: `${2 + (i % 3)}px`,
+                  animationDuration: `${12 + (i % 13)}s`,
+                  animationDelay: `${-((i * 7) % 25)}s`,
+                }}
+              />
+            ))}
+          </div>
+        )}
         <footer className="letter-footer">
           <WorldControl paused={paused} setPaused={setPauseOverride} />
         </footer>

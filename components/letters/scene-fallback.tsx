@@ -1,4 +1,6 @@
-export function SceneFallback() {
+import { atmospheres, type Atmosphere } from "./scene-palette";
+
+export function SceneFallback({ atmosphere }: { atmosphere: Atmosphere }) {
   return (
     <svg
       className="scene-fallback"
@@ -6,7 +8,7 @@ export function SceneFallback() {
       preserveAspectRatio="xMidYMax slice"
       aria-hidden="true"
     >
-      <path fill="#233e51" d="M0 250H1400V430H0z" />
+      <path fill={atmospheres[atmosphere].river} d="M0 250H1400V430H0z" />
       <path
         fill="#667386"
         d="M0 225V185H80V160H140V205H210V150H270V175H340V210H1090V185H1160V155H1210V195H1320V160H1400V260H0z"
@@ -63,6 +65,14 @@ export function SceneFallback() {
           strokeWidth="6"
           d="M0 277Q230 270 435 120M970 120Q1170 270 1400 277"
         />
+      </g>
+      <g stroke={atmospheres[atmosphere].reflection} opacity=".3">
+        {Array.from({ length: 55 }, (_, i) => (
+          <path
+            key={i}
+            d={`M${(i * 137) % 1400} ${315 + ((i * 17) % 110)}h${12 + ((i * 7) % 65)}`}
+          />
+        ))}
       </g>
       <g stroke="#e9e3d7" opacity=".5">
         <path d="M230 355h170m350 35h220m150-50h100M100 410h180" />

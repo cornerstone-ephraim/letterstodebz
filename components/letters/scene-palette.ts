@@ -17,3 +17,124 @@ export const palette = {
   cream: "#b9aa8b",
   sky: "#172537",
 };
+
+export const seasons = {
+  winter: {
+    sky: "#172537",
+    light: "#b7cff5",
+    grass: "#334c43",
+    foliage: "#3c5c4b",
+    intensity: 0.65,
+  },
+  spring: {
+    sky: "#233b42",
+    light: "#e0ead0",
+    grass: "#46634b",
+    foliage: "#769568",
+    intensity: 0.85,
+  },
+  summer: {
+    sky: "#443746",
+    light: "#ffe0b0",
+    grass: "#536646",
+    foliage: "#658657",
+    intensity: 1,
+  },
+  autumn: {
+    sky: "#352b38",
+    light: "#efd0aa",
+    grass: "#62553e",
+    foliage: "#b57c43",
+    intensity: 0.8,
+  },
+};
+
+export const atmospheres = {
+  night: {
+    sky: "#172537",
+    horizon: "#27374a",
+    ink: "#f2e9da",
+    muted: "#b8c1cb",
+    accent: "#e49b8d",
+    light: "#b7cff5",
+    river: "#233e51",
+    reflection: "#c9d6d9",
+    intensity: 0.65,
+    sun: 0.9,
+    description: "moonlit winter night",
+  },
+  morning: {
+    sky: "#cbdadc",
+    horizon: "#edf0df",
+    ink: "#283e42",
+    muted: "#52686a",
+    accent: "#944f46",
+    light: "#fff5df",
+    river: "#698e91",
+    reflection: "#e3eece",
+    intensity: 1.15,
+    sun: 1.5,
+    description: "soft spring morning",
+  },
+  day: {
+    sky: "#c6dfe3",
+    horizon: "#f2ecd8",
+    ink: "#263f43",
+    muted: "#506568",
+    accent: "#944f46",
+    light: "#fff3ce",
+    river: "#608e8b",
+    reflection: "#f3edc8",
+    intensity: 1.3,
+    sun: 1.8,
+    description: "gentle summer daylight",
+  },
+  golden: {
+    sky: "#d9c6af",
+    horizon: "#f0d6a8",
+    ink: "#443c37",
+    muted: "#6b5c50",
+    accent: "#914938",
+    light: "#ffda9b",
+    river: "#718f89",
+    reflection: "#ffe0a2",
+    intensity: 1.1,
+    sun: 1.6,
+    description: "golden late afternoon",
+  },
+  sunset: {
+    sky: "#776675",
+    horizon: "#d39a7c",
+    ink: "#fff4e4",
+    muted: "#f1dfcd",
+    accent: "#ffd2a9",
+    light: "#ffc694",
+    river: "#526875",
+    reflection: "#f4bc91",
+    intensity: 0.85,
+    sun: 1.1,
+    description: "warm autumn sunset",
+  },
+  dusk: {
+    sky: "#26364e",
+    horizon: "#657189",
+    ink: "#f2e9da",
+    muted: "#ccd3df",
+    accent: "#e49b8d",
+    light: "#b8c8e8",
+    river: "#334d65",
+    reflection: "#c3d0e3",
+    intensity: 0.7,
+    sun: 0.85,
+    description: "autumn blue hour",
+  },
+};
+export type Atmosphere = keyof typeof atmospheres;
+export function atmosphereFor(id: string): Atmosphere {
+  const month = Number(id.slice(5));
+  if (month === 12 || month <= 2) return "night";
+  if (month <= 4) return "morning";
+  if (month <= 6) return "day";
+  if (month <= 8) return "golden";
+  return month === 9 ? "sunset" : "dusk";
+}

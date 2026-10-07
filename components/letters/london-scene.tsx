@@ -5,11 +5,14 @@ import { useRef } from "react";
 import type { Group, OrthographicCamera } from "three";
 import type { MotionValue } from "motion/react";
 import { LondonBanks } from "./london-banks";
-import { Block, Bridge } from "./bridge";
-import { palette as p } from "./scene-palette";
+import { Block, Bridge, DaylightContext } from "./bridge";
+import type { Season } from "@/data/letters";
+import { River } from "./river";
+import { palette as p, atmospheres, type Atmosphere } from "./scene-palette";
 
 function Traffic({ paused }: { paused: boolean }) {
   const fleet = useRef<Group>(null);
+
   useFrame((_, delta) => {
     if (paused || !fleet.current) return;
     fleet.current.children.forEach((car, i) => {
@@ -20,6 +23,7 @@ function Traffic({ paused }: { paused: boolean }) {
       if (car.position.x < -90) car.position.x = 90;
     });
   });
+
   return (
     <group ref={fleet}>
       {Array.from({ length: 24 }, (_, i) => {
@@ -72,7 +76,11 @@ function Traffic({ paused }: { paused: boolean }) {
 function World({
   progress,
   paused,
+  season,
+  atmosphere,
 }: {
+  atmosphere: Atmosphere;
+  season: Season;
   progress: MotionValue<number>;
   paused: boolean;
 }) {
@@ -101,23 +109,21 @@ function World({
     }
   });
   return (
-    <>
-      <ambientLight intensity={0.65} color="#a9bfdc" />
+    <DaylightContext.Provider
+      value={["morning", "day", "golden"].includes(atmosphere)}
+    >
+      <ambientLight
+        intensity={atmospheres[atmosphere].intensity}
+        color={atmospheres[atmosphere].light}
+      />
       <directionalLight
         position={[-15, 25, 15]}
-        intensity={0.9}
-        color="#b7cff5"
+        intensity={atmospheres[atmosphere].sun}
+        color={atmospheres[atmosphere].light}
       />
-      <fog attach="fog" args={[p.sky, 48, 115]} />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.18, 0]}>
-        <planeGeometry args={[250, 250]} />
-        <meshStandardMaterial
-          color={p.river}
-          roughness={0.45}
-          metalness={0.15}
-        />
-      </mesh>
-      <LondonBanks />
+      <fog attach="fog" args={[atmospheres[atmosphere].sky, 48, 115]} />
+      <River atmosphere={atmosphere} paused={paused} />
+      <LondonBanks season={season} />
       <Bridge />
       <Traffic paused={paused} />
       <group ref={boat} position={[0, 0, 8]}>
@@ -129,24 +135,18 @@ function World({
           color={p.roof}
         />
       </group>
-      {Array.from({ length: 24 }, (_, i) => (
-        <mesh
-          key={i}
-          rotation={[-Math.PI / 2, 0, 0]}
-          position={[((i * 13) % 47) - 23, -0.165, ((i * 7) % 23) - 3]}
-        >
-          <planeGeometry args={[0.6 + (i % 4), 0.035]} />
-          <meshBasicMaterial color={p.trim} transparent opacity={0.3} />
-        </mesh>
-      ))}
-    </>
+    </DaylightContext.Provider>
   );
 }
 
 export default function LondonScene({
   progress,
   paused,
+  season,
+  atmosphere,
 }: {
+  atmosphere: Atmosphere;
+  season: Season;
   progress: MotionValue<number>;
   paused: boolean;
 }) {
@@ -159,7 +159,12 @@ export default function LondonScene({
       frameloop={paused ? "demand" : "always"}
       fallback={<span />}
     >
-      <World progress={progress} paused={paused} />
+      <World
+        progress={progress}
+        paused={paused}
+        season={season}
+        atmosphere={atmosphere}
+      />
     </Canvas>
   );
 }

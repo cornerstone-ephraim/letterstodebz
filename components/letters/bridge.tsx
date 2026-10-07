@@ -1,3 +1,7 @@
+import { createContext, useContext } from "react";
+
+export const DaylightContext = createContext(false);
+
 import { palette as p } from "./scene-palette";
 
 type Point = [number, number, number];
@@ -10,14 +14,15 @@ export function Block({
   size: Point;
   color: string;
 }) {
+  const daylight = useContext(DaylightContext);
   return (
     <mesh position={position} castShadow receiveShadow>
       <boxGeometry args={size} />
       <meshStandardMaterial
-        color={color}
+        color={daylight && color === p.window ? p.dark : color}
         roughness={0.9}
         emissive={color === p.window ? p.window : "#000000"}
-        emissiveIntensity={color === p.window ? 1.3 : 0}
+        emissiveIntensity={!daylight && color === p.window ? 1.3 : 0}
       />
     </mesh>
   );

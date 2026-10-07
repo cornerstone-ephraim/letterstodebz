@@ -1,5 +1,6 @@
 import { Block } from "./bridge";
-import { palette as p } from "./scene-palette";
+import type { Season } from "@/data/letters";
+import { palette as p, seasons } from "./scene-palette";
 
 function Townhouse({
   x,
@@ -61,13 +62,23 @@ function Townhouse({
   );
 }
 
-function Tree({ x, z, tall = 1 }: { x: number; z: number; tall?: number }) {
+function Tree({
+  x,
+  z,
+  tall = 1,
+  foliage,
+}: {
+  x: number;
+  z: number;
+  tall?: number;
+  foliage: string;
+}) {
   return (
     <group position={[x, 1.7, z]} scale={tall}>
       <Block position={[0, 0.65, 0]} size={[0.12, 1.3, 0.12]} color={p.trunk} />
       <mesh position={[0, 1.55, 0]} scale={[0.65, 1, 0.65]}>
         <icosahedronGeometry args={[0.9, 1]} />
-        <meshStandardMaterial color={p.foliage} roughness={1} />
+        <meshStandardMaterial color={foliage} roughness={1} />
       </mesh>
     </group>
   );
@@ -125,7 +136,7 @@ function Castle() {
 
 /** A composed side elevation: Southwark to the left, Tower Hamlets to the right.
  * Their actual banks are south and north; this is not a geographic map. */
-export function LondonBanks() {
+export function LondonBanks({ season }: { season: Season }) {
   return (
     <group>
       {[-1, 1].map((side) => (
@@ -138,7 +149,7 @@ export function LondonBanks() {
           <Block
             position={[side * 59, 1.71, -4]}
             size={[66, 0.03, 22]}
-            color={p.grass}
+            color={seasons[season].grass}
           />
           <Block
             position={[side * 59, 1.76, 0]}
@@ -184,6 +195,7 @@ export function LondonBanks() {
           ))}
           {Array.from({ length: 12 }, (_, i) => (
             <Tree
+              foliage={seasons[season].foliage}
               key={i}
               x={side * (28 + i * 4.8)}
               z={i % 2 ? 4.5 : -2.3}
